@@ -1,12 +1,21 @@
 import pandas as pd
 from sqlalchemy import create_engine
 import cx_Oracle
+from CommonUtilities.utilities import sales_data_from_Linux_server
+from Configuration.etlconfig import *
+import logging
+
+# Logging configution
+logging.basicConfig(
+    filename="Logs/etljob.log",
+    filemode="a" ,
+    format = '%(asctime)s-%(levelname)s-%(message)s',
+    level = logging.INFO
+    )
+logger = logging.getLogger(__name__)
 
 
 # database connection
-from CommonUtilities.utilities import sales_data_from_Linux_server
-from Configuration.etlconfig import *
-
 oracle_engine = create_engine(f"oracle+cx_oracle://{ORACLE_USER}:{ORACLE_PASSWORD}@{ORACLE_HOST}:{ORACLE_PORT}/{ORACLE_SERVICE}")
 
 mysql_engine = create_engine(f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}")
@@ -15,9 +24,15 @@ mysql_engine = create_engine(f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MY
 class DataExtraction:
     # 1. extract the sales data from Linux servers and load in to mysql staging table
     def extract_sales_data_and_load_stage(self):
-        sales_data_from_Linux_server(self)
-        df = pd.read_csv("SourceSystem/sales_data_linux.csv")
-        df.to_sql("staging_sales",mysql_engine,index=False)
+        logger.info("sales data extraction started...")
+        try:
+            sales_data_from_Linux_server(self)
+            df = pd.read_csv("SourceSystem/sales_data_linux.csv")
+            df.to_sql("staging_sales",mysql_engine,index=False)
+            logger.info("sales data extraction completed...")
+        except Exception as e:
+            logger.error("Error while data extraction",e,exc_info=True)
+
 
     # 2. extract the product data from local file servers and load in to mysql staging table
     def extract_product_data_and_load_stage(self):
