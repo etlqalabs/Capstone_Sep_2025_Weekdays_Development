@@ -3,3 +3,5 @@
 1. implement the logger functionality for all the other source systems
 2. implement the try ...except functionality for all the other source systems
 
+# Day 4:
+1. Club all the processs ( extract, transform and load ) in to a single script
